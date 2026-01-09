@@ -30,9 +30,35 @@ class BookCreate(BaseModel):
 class BookOut(BaseModel):
     id: int
     title: str
-    description: Optional[str]
+    description: str | None
     author_id: int
+    avg_rating: float | None
     genres: List[GenreOut]
+
+    class Config:
+        orm_mode = True
+
+class ReviewCreate(BaseModel):
+    rating: int
+    comment: str | None = None
+
+class ReviewOut(BaseModel):
+    id: int
+    rating: int
+    comment: str | None
+    user_id: int
+
+    class Config:
+        orm_mode = True
+
+class CollectionCreate(BaseModel):
+    name: str
+
+class CollectionOut(BaseModel):
+    id: int
+    name: str
+    is_default: bool
+    books: list[BookOut] = []
 
     class Config:
         orm_mode = True
