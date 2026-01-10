@@ -62,3 +62,23 @@ class CollectionOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class TagCreate(BaseModel):
+    name: str
+
+class TagOut(BaseModel):
+    id: int
+    name: str
+    book_id: int
+
+    class Config:
+        orm_mode = True
+
+class FriendRequestOut(BaseModel):
+    id: int
+    sender_id: int
+    receiver_id: int
+    status: str
+
+    class Config:
+        orm_mode = True

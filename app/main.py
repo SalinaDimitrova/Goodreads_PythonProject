@@ -1,13 +1,13 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
+from typing import List
 
 from .database import Base, engine
-from .models import User, Book, Genre, Review, Collection
+from .models import User, Book, Genre, Review, Collection, Tag, FriendRequest, FriendStatus
 from .schemas import UserCreate, UserOut, BookCreate, BookOut, GenreOut, ReviewCreate, ReviewOut, CollectionOut, \
-    CollectionCreate
+    CollectionCreate, TagCreate, TagOut, FriendRequestOut
 from .deps import get_db, get_current_user
-
-from typing import List
 
 Base.metadata.create_all(bind=engine)
 
@@ -253,3 +253,277 @@ def remove_book_from_collection(
         db.commit()
 
     return {"msg": "Book removed"}
+
+@app.post("/books/{book_id}/tags", response_model=TagOut)
+def add_tag(
+    book_id: int,
+    data: TagCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    book = db.get(Book, book_id)
+    if not book:
+        raise HTTPException(404, "Book not found")
+
+    # не допускаме дублиране на същия таг за същата книга от същия user
+    existing = db.query(Tag).filter(
+        Tag.book_id == book_id,
+        Tag.user_id == user.id,
+        Tag.name == data.name
+    ).first()
+
+    if existing:
+        raise HTTPException(400, "Tag already exists")
+
+    tag = Tag(
+        name=data.name,
+        user_id=user.id,
+        book_id=book_id
+    )
+
+    db.add(tag)
+    db.commit()
+    db.refresh(tag)
+    return tag
+
+@app.delete("/tags/{tag_id}")
+def delete_tag(
+    tag_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    tag = db.get(Tag, tag_id)
+
+    if not tag or tag.user_id != user.id:
+        raise HTTPException(404, "Tag not found")
+
+    db.delete(tag)
+    db.commit()
+    return {"msg": "Tag deleted"}
+
+@app.get("/tags/{tag_name}/books", response_model=list[BookOut])
+def books_by_tag(
+    tag_name: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    tags = db.query(Tag).filter(
+        Tag.name == tag_name,
+        Tag.user_id == user.id
+    ).all()
+
+    return [tag.book for tag in tags]
+
+@app.get("/books/{book_id}/tags", response_model=list[TagOut])
+def get_my_tags_for_book(
+    book_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    return db.query(Tag).filter(
+        Tag.book_id == book_id,
+        Tag.user_id == user.id
+    ).all()
+
+@app.post("/friends/{user_id}", response_model=FriendRequestOut)
+def send_friend_request(
+    user_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    if user_id == user.id:
+        raise HTTPException(400, "Cannot add yourself")
+
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404, "User not found")
+
+    existing = db.query(FriendRequest).filter(
+        ((FriendRequest.sender_id == user.id) &
+         (FriendRequest.receiver_id == user_id)) |
+        ((FriendRequest.sender_id == user_id) &
+         (FriendRequest.receiver_id == user.id))
+    ).first()
+
+    if existing:
+        raise HTTPException(400, "Request already exists")
+
+    fr = FriendRequest(
+        sender_id=user.id,
+        receiver_id=user_id
+    )
+
+    db.add(fr)
+    db.commit()
+    db.refresh(fr)
+    return fr
+
+@app.get("/friends/requests", response_model=list[FriendRequestOut])
+def incoming_requests(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    return db.query(FriendRequest).filter(
+        FriendRequest.receiver_id == user.id,
+        FriendRequest.status == FriendStatus.pending
+    ).all()
+
+@app.post("/friends/requests/{request_id}/accept")
+def accept_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    fr = db.get(FriendRequest, request_id)
+
+    if not fr or fr.receiver_id != user.id:
+        raise HTTPException(404, "Request not found")
+
+    fr.status = FriendStatus.accepted
+    db.commit()
+    return {"msg": "Friend request accepted"}
+
+@app.post("/friends/requests/{request_id}/reject")
+def reject_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    fr = db.get(FriendRequest, request_id)
+
+    if not fr or fr.receiver_id != user.id:
+        raise HTTPException(404, "Request not found")
+
+    fr.status = FriendStatus.rejected
+    db.commit()
+    return {"msg": "Friend request rejected"}
+
+@app.get("/friends")
+def list_friends(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    accepted = db.query(FriendRequest).filter(
+        FriendRequest.status == FriendStatus.accepted,
+        ((FriendRequest.sender_id == user.id) |
+         (FriendRequest.receiver_id == user.id))
+    ).all()
+
+    friends = []
+    for fr in accepted:
+        friend_id = fr.receiver_id if fr.sender_id == user.id else fr.sender_id
+        friends.append(db.get(User, friend_id))
+
+    return friends
+
+@app.delete("/friends/{user_id}")
+def remove_friend(
+    user_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    fr = db.query(FriendRequest).filter(
+        FriendRequest.status == FriendStatus.accepted,
+        ((FriendRequest.sender_id == user.id) &
+         (FriendRequest.receiver_id == user_id)) |
+        ((FriendRequest.sender_id == user_id) &
+         (FriendRequest.receiver_id == user.id))
+    ).first()
+
+    if not fr:
+        raise HTTPException(404, "Friend not found")
+
+    db.delete(fr)
+    db.commit()
+    return {"msg": "Friend removed"}
+
+def get_excluded_book_ids(db: Session, user: User):
+    from .models import Collection
+
+    excluded = set()
+
+    collections = db.query(Collection).filter(
+        Collection.user_id == user.id,
+        Collection.is_default == True
+    ).all()
+
+    for c in collections:
+        if c.name in ["Reading", "Read"]:
+            for book in c.books:
+                excluded.add(book.id)
+
+    return excluded
+
+def get_genre_preferences(db: Session, user: User):
+    genre_scores = {}
+
+    reviews = db.query(Review).filter(Review.user_id == user.id).all()
+
+    for r in reviews:
+        for g in r.book.genres:
+            genre_scores.setdefault(g.id, []).append(r.rating)
+
+    avg = {gid: sum(v)/len(v) for gid, v in genre_scores.items()}
+
+    liked = {gid for gid, score in avg.items() if score >= 4}
+    disliked = {gid for gid, score in avg.items() if score <= 2}
+
+    return liked, disliked
+
+def books_liked_by_friends(db: Session, user: User):
+    friend_ids = []
+
+    friendships = db.query(FriendRequest).filter(
+        FriendRequest.status == FriendStatus.accepted,
+        ((FriendRequest.sender_id == user.id) |
+         (FriendRequest.receiver_id == user.id))
+    ).all()
+
+    for fr in friendships:
+        friend_ids.append(fr.receiver_id if fr.sender_id == user.id else fr.sender_id)
+
+    return db.query(Book).join(Review).filter(
+        Review.user_id.in_(friend_ids),
+        Review.rating >= 4
+    ).all()
+
+@app.get("/recommendations")
+def recommend_books(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user)
+):
+    excluded = get_excluded_book_ids(db, user)
+    liked_genres, disliked_genres = get_genre_preferences(db, user)
+
+    candidates = db.query(Book).filter(
+        Book.id.notin_(excluded)
+    ).all()
+
+    scored = []
+
+    for book in candidates:
+        score = 0
+
+        if book.avg_rating:
+            score += book.avg_rating
+
+        genre_ids = {g.id for g in book.genres}
+
+        if genre_ids & liked_genres:
+            score += 2
+
+        if genre_ids & disliked_genres:
+            score -= 2
+
+        scored.append((score, book))
+
+    friend_books = books_liked_by_friends(db, user)
+    for b in friend_books:
+        scored.append((5, b))
+
+    # махаме дубликати
+    unique = {b.id: (s, b) for s, b in scored}
+
+    result = sorted(unique.values(), key=lambda x: x[0], reverse=True)
+
+    return [b for _, b in result[:5]]

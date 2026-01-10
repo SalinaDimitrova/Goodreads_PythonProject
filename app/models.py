@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, Table, CheckConstraint, select, Boolean
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Table, CheckConstraint, select, Boolean, Enum
 from sqlalchemy.orm import relationship, column_property
 from sqlalchemy.sql import func
 from .database import Base
+import enum
 
-# many-to-many таблица
 book_genres = Table(
     "book_genres",
     Base.metadata,
@@ -94,3 +94,37 @@ collection_books = Table(
     Column("collection_id", ForeignKey("collections.id"), primary_key=True),
     Column("book_id", ForeignKey("books.id"), primary_key=True),
 )
+
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+
+    user_id = Column(Integer, ForeignKey("users.id"))
+    book_id = Column(Integer, ForeignKey("books.id"))
+
+    user = relationship("User")
+    book = relationship("Book")
+
+    __table_args__ = (
+        CheckConstraint("length(name) > 0"),
+    )
+
+class FriendStatus(enum.Enum):
+    pending = "pending"
+    accepted = "accepted"
+    rejected = "rejected"
+
+class FriendRequest(Base):
+    __tablename__ = "friend_requests"
+
+    id = Column(Integer, primary_key=True)
+
+    sender_id = Column(Integer, ForeignKey("users.id"))
+    receiver_id = Column(Integer, ForeignKey("users.id"))
+
+    status = Column(Enum(FriendStatus), default=FriendStatus.pending)
+
+    sender = relationship("User", foreign_keys=[sender_id])
+    receiver = relationship("User", foreign_keys=[receiver_id])
