@@ -539,6 +539,7 @@ def recommend_books(
 
     return [b for _, b in result[:5]]
 
+#Frontend beginning
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
@@ -607,6 +608,35 @@ def book_page(
             "collections": collections
         }
     )
+@app.post("/demo/delete-review")
+def demo_delete_review(
+    review_id: int = Form(...),
+    book_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.get(User, 5)  # demo user
+
+    review = db.get(Review, review_id)
+    if not review:
+        raise HTTPException(404)
+
+    book = db.get(Book, review.book_id)
+
+    if (
+        review.user_id != user.id and
+        book.author_id != user.id and
+        user.role != "admin"
+    ):
+        raise HTTPException(403)
+
+    db.delete(review)
+    db.commit()
+
+    return RedirectResponse(
+        f"/books/{book_id}",
+        status_code=303
+    )
+
 
 @app.post("/demo/add-to-collection")
 def demo_add_to_collection(

@@ -41,7 +41,20 @@ Genres:
 <p>Collections count: {{ collections | length }}</p>
 <ul>
 {% for r in reviews %}
-    <li>⭐ {{ r.rating }} – {{ r.comment }}</li>
+  <li>
+    ⭐ {{ r.rating }}<br>
+    {{ r.comment or "" }}
+
+    {% if r.user_id == 5 %}
+      <form method="post" action="/demo/delete-review" style="margin-top:5px;">
+        <input type="hidden" name="review_id" value="{{ r.id }}">
+        <input type="hidden" name="book_id" value="{{ book.id }}">
+        <button type="submit">Delete</button>
+      </form>
+    {% endif %}
+  </li>
+{% else %}
+  <li><em>No reviews yet</em></li>
 {% endfor %}
 </ul>
 {% endblock %}
