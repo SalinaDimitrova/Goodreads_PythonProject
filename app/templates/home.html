@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>All Books</h2>
+
+<h3>Create book (author)</h3>
+<form method="post" action="/demo/create-book">
+    <input name="title" placeholder="Title" required>
+    <input name="description" placeholder="Description">
+    <button>Create</button>
+</form>
+
+<ul>
+{% for book in books %}
+    <li>
+        <a href="/books/{{ book.id }}">{{ book.title }}</a>
+        {% if book.avg_rating %}
+            ⭐ {{ "%.1f"|format(book.avg_rating) }}
+        {% endif %}
+    </li>
+{% endfor %}
+</ul>
+{% endblock %}

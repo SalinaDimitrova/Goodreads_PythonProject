@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ book.title }}</h2>
+
+<p>{{ book.description }}</p>
+
+<p>
+Genres:
+{% for g in book.genres %}
+    <span>{{ g.name }}</span>
+{% endfor %}
+</p>
+
+<p>Average rating: {{ book.avg_rating }}</p>
+
+<h3>Reviews</h3>
+
+<h3>Add review</h3>
+<form method="post" action="/demo/add-review">
+    <input type="hidden" name="book_id" value="{{ book.id }}">
+    <input name="rating" placeholder="1-5" required>
+    <input name="comment" placeholder="Comment">
+    <button>Submit</button>
+</form>
+
+<h3>Add to collection</h3>
+
+<form method="post" action="/demo/add-to-collection">
+    <input type="hidden" name="book_id" value="{{ book.id }}">
+
+    <select name="collection_id" required>
+        {% for c in collections %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Add</button>
+</form>
+
+<p>Collections count: {{ collections | length }}</p>
+<ul>
+{% for r in reviews %}
+    <li>⭐ {{ r.rating }} – {{ r.comment }}</li>
+{% endfor %}
+</ul>
+{% endblock %}

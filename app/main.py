@@ -9,9 +9,20 @@ from .schemas import UserCreate, UserOut, BookCreate, BookOut, GenreOut, ReviewC
     CollectionCreate, TagCreate, TagOut, FriendRequestOut
 from .deps import get_db, get_current_user
 
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi import Request
+
+from fastapi import Form
+from fastapi.responses import RedirectResponse
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Goodreads for X")
+
+templates = Jinja2Templates(directory="app/templates")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 @app.post("/users", response_model=UserOut)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -74,7 +85,7 @@ def create_book(
     db.refresh(book)
     return book
 
-@app.get("/books/{book_id}", response_model=BookOut)
+@app.get("/api/books/{book_id}", response_model=BookOut)
 def get_book(book_id: int, db: Session = Depends(get_db)):
     book = db.query(Book).get(book_id)
     if not book:
@@ -164,7 +175,7 @@ def delete_review(
 def get_book_reviews(book_id: int, db: Session = Depends(get_db)):
     return db.query(Review).filter(Review.book_id == book_id).all()
 
-@app.get("/collections", response_model=list[CollectionOut])
+@app.get("/api/collections", response_model=list[CollectionOut])
 def get_my_collections(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
@@ -527,3 +538,198 @@ def recommend_books(
     result = sorted(unique.values(), key=lambda x: x[0], reverse=True)
 
     return [b for _, b in result[:5]]
+
+
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request, db: Session = Depends(get_db)):
+    books = db.query(Book).all()
+    return templates.TemplateResponse(
+        "home.html",
+        {"request": request, "books": books}
+    )
+
+@app.post("/demo/create-book")
+def demo_create_book(
+    title: str = Form(...),
+    description: str = Form(""),
+    db: Session = Depends(get_db)
+):
+    author = db.get(User, 5)  # demo author
+    book = Book(title=title, description=description, author_id=author.id)
+    db.add(book)
+    db.commit()
+    return RedirectResponse("/", status_code=303)
+
+
+@app.post("/demo/add-review")
+def demo_add_review(
+    book_id: int = Form(...),
+    rating: int = Form(...),
+    comment: str = Form(""),
+    db: Session = Depends(get_db)
+):
+    user = db.get(User, 5)
+    review = Review(
+        rating=rating,
+        comment=comment,
+        user_id=user.id,
+        book_id=book_id
+    )
+    db.add(review)
+    db.commit()
+    return RedirectResponse(f"/books/{book_id}", status_code=303)
+
+@app.get("/books/{book_id}", response_class=HTMLResponse)
+def book_page(
+    book_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    book = db.get(Book, book_id)
+    if not book:
+        raise HTTPException(404)
+
+    user = db.get(User, 5)  # demo user
+    collections = db.query(Collection).filter(
+        Collection.user_id == user.id
+    ).all()
+
+    reviews = db.query(Review).filter(
+        Review.book_id == book_id
+    ).all()
+
+    return templates.TemplateResponse(
+        "book.html",
+        {
+            "request": request,
+            "book": book,
+            "reviews": reviews,
+            "collections": collections
+        }
+    )
+
+@app.post("/demo/add-to-collection")
+def demo_add_to_collection(
+    book_id: int = Form(...),
+    collection_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.get(User, 5)  # demo user
+
+    book = db.get(Book, book_id)
+    collection = db.get(Collection, collection_id)
+
+    if not book or not collection or collection.user_id != user.id:
+        raise HTTPException(404)
+
+    # ако колекцията е default → махаме книгата от другите default
+    if collection.is_default:
+        defaults = db.query(Collection).filter(
+            Collection.user_id == user.id,
+            Collection.is_default == True
+        ).all()
+
+        for c in defaults:
+            if book in c.books:
+                c.books.remove(book)
+
+    if book not in collection.books:
+        collection.books.append(book)
+        db.commit()
+
+    return RedirectResponse(
+        f"/books/{book_id}",
+        status_code=303
+    )
+
+
+@app.get("/collections", response_class=HTMLResponse)
+def collections_page(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    user = db.get(User, 5)  # mock logged-in user
+    collections = db.query(Collection).filter(Collection.user_id == user.id).all()
+
+    return templates.TemplateResponse(
+        "collections.html",
+        {"request": request, "collections": collections}
+    )
+
+@app.post("/demo/add-to-reading")
+def demo_add_to_reading(
+    book_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.get(User, 5)
+    collection = db.query(Collection).filter(
+        Collection.user_id == user.id,
+        Collection.name == "Reading"
+    ).first()
+
+    book = db.get(Book, book_id)
+    collection.books.append(book)
+    db.commit()
+
+    return RedirectResponse(f"/books/{book_id}", status_code=303)
+
+@app.post("/demo/create-collection")
+def demo_create_collection(
+    name: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.get(User, 5)  # demo user
+
+    collection = Collection(
+        name=name,
+        is_default=False,
+        user_id=user.id
+    )
+
+    db.add(collection)
+    db.commit()
+
+    return RedirectResponse(
+        "/collections",
+        status_code=303
+    )
+
+@app.post("/demo/delete-collection")
+def demo_delete_collection(
+    collection_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.get(User, 5)  # demo user
+
+    collection = db.get(Collection, collection_id)
+
+    if (
+        not collection or
+        collection.user_id != user.id or
+        collection.is_default
+    ):
+        raise HTTPException(400, "Cannot delete this collection")
+
+    db.delete(collection)
+    db.commit()
+
+    return RedirectResponse(
+        "/collections",
+        status_code=303
+    )
+
+
+@app.get("/recommendations-page", response_class=HTMLResponse)
+def recommendations_page(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    user = db.get(User, 5)  # mock user
+    books = recommend_books(db, user)
+
+    return templates.TemplateResponse(
+        "recommendations.html",
+        {"request": request, "books": books}
+    )
+
+

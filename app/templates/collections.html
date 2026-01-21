@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>My Collections</h2>
+
+<h3>Create new collection</h3>
+<form method="post" action="/demo/create-collection">
+    <input type="text" name="name" placeholder="Collection name" required>
+    <button type="submit">Create</button>
+</form>
+
+<hr>
+
+{% for c in collections %}
+  <h3>
+    {{ c.name }}
+
+    {% if not c.is_default %}
+      <form method="post"
+            action="/demo/delete-collection"
+            style="display:inline;">
+        <input type="hidden" name="collection_id" value="{{ c.id }}">
+        <button type="submit">Delete</button>
+      </form>
+    {% endif %}
+  </h3>
+
+  <ul>
+    {% for book in c.books %}
+      <li>{{ book.title }}</li>
+    {% else %}
+      <li><em>No books</em></li>
+    {% endfor %}
+  </ul>
+{% endfor %}
+
+{% endblock %}
