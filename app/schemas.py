@@ -1,9 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
+
 
 class UserCreate(BaseModel):
     username: str
+    password: str
     role: str = "user"
+
+    @field_validator("password")
+    @classmethod
+    def password_length(cls, v):
+        if len(v.encode("utf-8")) > 72:
+            raise ValueError("Password must be at most 72 bytes")
+        return v
 
 class UserOut(BaseModel):
     id: int
@@ -12,6 +21,15 @@ class UserOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
 
 class GenreOut(BaseModel):
     id: int

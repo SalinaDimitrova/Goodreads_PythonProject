@@ -1,27 +1,35 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
 from typing import List
 
 from .database import Base, engine
 from .models import User, Book, Genre, Review, Collection, Tag, FriendRequest, FriendStatus
 from .schemas import UserCreate, UserOut, BookCreate, BookOut, GenreOut, ReviewCreate, ReviewOut, CollectionOut, \
-    CollectionCreate, TagCreate, TagOut, FriendRequestOut
+    CollectionCreate, TagCreate, TagOut, FriendRequestOut, LoginRequest, TokenOut
 from .deps import get_db, get_current_user
+from .auth import create_access_token
+from fastapi.security import OAuth2PasswordRequestForm
 
-Base.metadata.create_all(bind=engine)
+from .db_init import init_db
+init_db()
+
 
 app = FastAPI(title="Goodreads for X")
 
 @app.post("/users", response_model=UserOut)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = User(username=user.username, role=user.role)
+    db_user = User(
+        username=user.username,
+        role=user.role
+    )
+    db_user.set_password(user.password)
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
 
-    default_names = ["To Read", "Reading", "Read"]
-    for name in default_names:
+    # default collections
+    for name in ["To Read", "Reading", "Read"]:
         db.add(Collection(
             name=name,
             is_default=True,
@@ -30,6 +38,26 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
 
     return db_user
+
+@app.post("/login", response_model=TokenOut)
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.username == form_data.username).first()
+
+    if not user or not user.verify_password(form_data.password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    token = create_access_token({
+        "sub": str(user.id),
+        "role": user.role
+    })
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
 
 
 @app.get("/me", response_model=UserOut)

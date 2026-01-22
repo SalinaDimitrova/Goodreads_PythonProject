@@ -4,6 +4,13 @@ from sqlalchemy.sql import func
 from .database import Base
 import enum
 
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
+
 book_genres = Table(
     "book_genres",
     Base.metadata,
@@ -16,7 +23,19 @@ class User(Base):
 
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True, nullable=False)
-    role = Column(String, default="user")  # user | author | admin
+    password_hash = Column(String, nullable=False)
+    role = Column(String, default="user")
+
+    def set_password(self, password: str):
+        password = password.strip()
+
+        if len(password.encode("utf-8")) > 72:
+            raise ValueError("Password too long (max 72 bytes)")
+
+        self.password_hash = pwd_context.hash(password)
+
+    def verify_password(self, password: str) -> bool:
+        return pwd_context.verify(password, self.password_hash)
 
 class Review(Base):
     __tablename__ = "reviews"
