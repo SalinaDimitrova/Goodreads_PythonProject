@@ -26,6 +26,12 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     role = Column(String, default="user")
 
+    reviews = relationship(
+        "Review",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+
     def set_password(self, password: str):
         password = password.strip()
 
@@ -47,12 +53,8 @@ class Review(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     book_id = Column(Integer, ForeignKey("books.id"))
 
-    __table_args__ = (
-        CheckConstraint("rating >= 1 AND rating <= 5"),
-    )
-
-    user = relationship("User")
-    book = relationship("Book")
+    user = relationship("User", back_populates="reviews")
+    book = relationship("Book", back_populates="reviews")
 
 class Book(Base):
     __tablename__ = "books"
@@ -66,7 +68,11 @@ class Book(Base):
     author = relationship("User")
 
     genres = relationship("Genre", secondary=book_genres, back_populates="books")
-    reviews = relationship("Review", cascade="all, delete")
+    reviews = relationship(
+        "Review",
+        back_populates="book",
+        cascade="all, delete-orphan"
+    )
 
     avg_rating = column_property(
         select(func.avg(Review.rating))

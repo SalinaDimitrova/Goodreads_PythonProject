@@ -54,7 +54,7 @@ class BookOut(BaseModel):
     genres: List[GenreOut]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ReviewCreate(BaseModel):
     rating: int
@@ -67,7 +67,7 @@ class ReviewOut(BaseModel):
     user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CollectionCreate(BaseModel):
     name: str
@@ -79,7 +79,7 @@ class CollectionOut(BaseModel):
     books: list[BookOut] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TagCreate(BaseModel):
     name: str
@@ -90,7 +90,7 @@ class TagOut(BaseModel):
     book_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class FriendRequestOut(BaseModel):
     id: int
@@ -99,4 +99,4 @@ class FriendRequestOut(BaseModel):
     status: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
