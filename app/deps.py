@@ -1,4 +1,6 @@
-from fastapi import Depends, HTTPException
+from typing import Iterator
+
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from jose import JWTError
@@ -7,10 +9,13 @@ from .database import SessionLocal
 from .models import User
 from .auth import decode_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme: OAuth2PasswordBearer = OAuth2PasswordBearer(
+    tokenUrl="/login"
+)
 
-def get_db():
-    db = SessionLocal()
+
+def get_db() -> Iterator[Session]:
+    db: Session = SessionLocal()
     try:
         yield db
     finally:
@@ -18,16 +23,22 @@ def get_db():
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-):
+    db: Session = Depends(get_db),
+) -> User:
     try:
-        payload = decode_token(token)
-        user_id = int(payload["sub"])
-    except (JWTError, KeyError):
-        raise HTTPException(401, "Invalid token")
+        payload: dict = decode_token(token)
+        user_id: int = int(payload["sub"])
+    except (JWTError, KeyError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+        )
 
-    user = db.get(User, user_id)
-    if not user:
-        raise HTTPException(401, "User not found")
+    user: User | None = db.get(User, user_id)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
 
     return user

@@ -1,0 +1,16 @@
+[project]
+name = "Goodreads"
+version = "0.1.0"
+
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "sqlalchemy",
+    "passlib[bcrypt]",
+    "python-jose",
+    "pytest",
+    "pytest-cov",
+    "coverage",
+    "pylint",
+    "mypy",
+]

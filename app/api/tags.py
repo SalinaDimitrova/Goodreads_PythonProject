@@ -1,40 +1,54 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
 from typing import List
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
 from ..deps import get_db, get_current_user
 from ..models import Tag, Book, User
-from ..schemas import TagCreate, TagOut
+from ..schemas import TagCreate, TagOut, BookOut
 
 api = APIRouter(
     prefix="/tags",
-    tags=["Tags"]
+    tags=["tags"],
 )
 
-@api.post("/books/{book_id}", response_model=TagOut)
+
+@api.post(
+    "/books/{book_id}",
+    response_model=TagOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def add_tag(
     book_id: int,
     data: TagCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
-):
-    book = db.get(Book, book_id)
+    user: User = Depends(get_current_user),
+) -> Tag:
+    book: Book | None = db.get(Book, book_id)
     if not book:
-        raise HTTPException(404, "Book not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book not found",
+        )
 
-    existing = db.query(Tag).filter(
+    tag_name: str = data.name.strip().lower()
+
+    existing: Tag | None = db.query(Tag).filter(
         Tag.book_id == book_id,
         Tag.user_id == user.id,
-        Tag.name == data.name
+        Tag.name == tag_name,
     ).first()
 
     if existing:
-        raise HTTPException(400, "Tag already exists")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tag already exists",
+        )
 
-    tag = Tag(
-        name=data.name,
+    tag: Tag = Tag(
+        name=tag_name,
         user_id=user.id,
-        book_id=book_id
+        book_id=book_id,
     )
 
     db.add(tag)
@@ -42,41 +56,58 @@ def add_tag(
     db.refresh(tag)
     return tag
 
-@api.delete("/{tag_id}")
+
+@api.delete(
+    "/{tag_id}",
+    status_code=status.HTTP_200_OK,
+)
 def delete_tag(
     tag_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
-):
-    tag = db.get(Tag, tag_id)
+    user: User = Depends(get_current_user),
+) -> dict[str, str]:
+    tag: Tag | None = db.get(Tag, tag_id)
 
     if not tag or tag.user_id != user.id:
-        raise HTTPException(404, "Tag not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tag not found",
+        )
 
     db.delete(tag)
     db.commit()
     return {"msg": "Tag deleted"}
 
-@api.get("/{tag_name}/books", response_model=List)
+
+@api.get(
+    "/{tag_name}/books",
+    response_model=List[BookOut],
+    status_code=status.HTTP_200_OK,
+)
 def books_by_tag(
     tag_name: str,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
-):
-    tags = db.query(Tag).filter(
-        Tag.name == tag_name,
-        Tag.user_id == user.id
+    user: User = Depends(get_current_user),
+) -> List[Book]:
+    tags: List[Tag] = db.query(Tag).filter(
+        Tag.name == tag_name.lower(),
+        Tag.user_id == user.id,
     ).all()
 
     return [tag.book for tag in tags]
 
-@api.get("/books/{book_id}", response_model=List[TagOut])
+
+@api.get(
+    "/books/{book_id}",
+    response_model=List[TagOut],
+    status_code=status.HTTP_200_OK,
+)
 def get_my_tags_for_book(
     book_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user)
-):
+    user: User = Depends(get_current_user),
+) -> List[Tag]:
     return db.query(Tag).filter(
         Tag.book_id == book_id,
-        Tag.user_id == user.id
+        Tag.user_id == user.id,
     ).all()

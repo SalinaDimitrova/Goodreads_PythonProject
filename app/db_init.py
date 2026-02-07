@@ -1,5 +1,8 @@
-from .database import Base, engine
-from . import models  # важно: импортва всички модели
+from sqlalchemy.engine import Engine
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
+from .database import Base, engine
+from . import models  # noqa: F401  (важно: регистрира моделите)
+
+
+def init_db(db_engine: Engine = engine) -> None:
+    Base.metadata.create_all(bind=db_engine)

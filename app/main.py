@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 
-from .database import Base, engine
 from .db_init import init_db
-
 from .api import (
     auth,
     users,
@@ -12,16 +10,15 @@ from .api import (
     collections,
     tags,
     friends,
-    recommendations
+    recommendations,
 )
 
-# 👉 инициализация на базата
+# 📦 инициализация на базата (ЕДИН път)
 init_db()
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Goodreads for X",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # 🔐 AUTH

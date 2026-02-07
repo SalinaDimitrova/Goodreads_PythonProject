@@ -1,12 +1,17 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy import create_engine, Engine
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 
-DATABASE_URL = "sqlite:///./goodreads.db"
+DATABASE_URL: str = "sqlite:///./goodreads.db"
 
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+engine: Engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False}
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal: sessionmaker[Session] = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
 
 Base = declarative_base()

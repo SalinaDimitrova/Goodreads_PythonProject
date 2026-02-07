@@ -1,6 +1,11 @@
-from pydantic import BaseModel, field_validator
 from typing import List, Optional
 
+from pydantic import BaseModel, Field, field_validator
+
+
+# ======================
+# Users & Auth
+# ======================
 
 class UserCreate(BaseModel):
     username: str
@@ -9,10 +14,11 @@ class UserCreate(BaseModel):
 
     @field_validator("password")
     @classmethod
-    def password_length(cls, v):
-        if len(v.encode("utf-8")) > 72:
+    def password_length(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 72:
             raise ValueError("Password must be at most 72 bytes")
-        return v
+        return value
+
 
 class UserOut(BaseModel):
     id: int
@@ -20,69 +26,93 @@ class UserOut(BaseModel):
     role: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
+
 
 class LoginRequest(BaseModel):
     username: str
     password: str
+
 
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
 
 
+# ======================
+# Genres & Books
+# ======================
+
 class GenreOut(BaseModel):
     id: int
     name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class BookCreate(BaseModel):
     title: str
     description: Optional[str] = None
-    genre_ids: List[int] = []
+    genre_ids: List[int] = Field(default_factory=list)
 
 
 class BookOut(BaseModel):
     id: int
     title: str
-    description: str | None
+    description: Optional[str]
     author_id: int
-    avg_rating: float | None
+    avg_rating: Optional[float]
     genres: List[GenreOut]
 
     class Config:
         from_attributes = True
 
+
+# ======================
+# Reviews
+# ======================
+
 class ReviewCreate(BaseModel):
     rating: int
-    comment: str | None = None
+    comment: Optional[str] = None
+
 
 class ReviewOut(BaseModel):
     id: int
     rating: int
-    comment: str | None
+    comment: Optional[str]
     user_id: int
 
     class Config:
         from_attributes = True
 
+
+# ======================
+# Collections
+# ======================
+
 class CollectionCreate(BaseModel):
     name: str
+
 
 class CollectionOut(BaseModel):
     id: int
     name: str
     is_default: bool
-    books: list[BookOut] = []
+    books: List[BookOut] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
 
+
+# ======================
+# Tags
+# ======================
+
 class TagCreate(BaseModel):
     name: str
+
 
 class TagOut(BaseModel):
     id: int
@@ -91,6 +121,11 @@ class TagOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ======================
+# Friends
+# ======================
 
 class FriendRequestOut(BaseModel):
     id: int

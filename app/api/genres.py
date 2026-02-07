@@ -1,7 +1,7 @@
 # app/api/genres.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-#ОПРАВИ СИ ЖАНРОВЕТЕ ДА НЕ СЕ СЪЗДАВА КНИГА БЕЗ ЖАНР
+from typing import List, Optional
 
 from ..deps import get_db, get_current_user
 from ..models import Genre, User
@@ -12,18 +12,25 @@ api = APIRouter(
     tags=["Genres"]
 )
 
+
 @api.post("/", response_model=GenreOut)
 def create_genre(
     name: str,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
-):
+) -> Genre:
     if user.role not in ["admin", "author"]:
-        raise HTTPException(403, "Not allowed")
+        raise HTTPException(status_code=403, detail="Not allowed")
 
-    existing = db.query(Genre).filter(Genre.name == name).first()
+    existing: Optional[Genre] = db.query(Genre).filter(
+        Genre.name == name
+    ).first()
+
     if existing:
-        raise HTTPException(400, "Genre already exists")
+        raise HTTPException(
+            status_code=400,
+            detail="Genre already exists"
+        )
 
     genre = Genre(name=name)
     db.add(genre)
@@ -32,14 +39,22 @@ def create_genre(
     return genre
 
 
-@api.get("/", response_model=list[GenreOut])
-def list_genres(db: Session = Depends(get_db)):
+@api.get("/", response_model=List[GenreOut])
+def list_genres(
+    db: Session = Depends(get_db)
+) -> List[Genre]:
     return db.query(Genre).all()
 
 
 @api.get("/{genre_id}", response_model=GenreOut)
-def get_genre(genre_id: int, db: Session = Depends(get_db)):
-    genre = db.get(Genre, genre_id)
+def get_genre(
+    genre_id: int,
+    db: Session = Depends(get_db)
+) -> Genre:
+    genre: Optional[Genre] = db.get(Genre, genre_id)
     if not genre:
-        raise HTTPException(404, "Genre not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Genre not found"
+        )
     return genre
