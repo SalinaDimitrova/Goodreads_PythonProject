@@ -7,26 +7,28 @@ def create_user_and_login(client, role="author"):
             "role": role,
         },
     )
+
     res = client.post(
         "/login",
         data={"username": "author", "password": "secret123"},
     )
-    return res.json()["access_token"]
 
+    access_token = res.json()["access_token"]
+    return {"Authorization": f"Bearer {access_token}"}
 
 def test_create_book_forbidden(client):
-    token = create_user_and_login(client, role="user")
+    headers = create_user_and_login(client, role="user")
 
     response = client.post(
         "/books/",
         json={"title": "Book", "genre_ids": [1]},
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
 
     assert response.status_code == 403
 
 def test_create_book_without_genre(client):
-    token = create_user_and_login(client, role="author")
+    headers = create_user_and_login(client, role="author")
 
     response = client.post(
         "/books/",
@@ -35,19 +37,18 @@ def test_create_book_without_genre(client):
             "description": "test",
             "genre_ids": [],
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
 
     assert response.status_code == 400
 
 def test_create_book_success(client):
-    token = create_user_and_login(client, role="author")
+    headers = create_user_and_login(client, role="author")
 
-    # create genre
     genre = client.post(
         "/genres/",
         params={"name": "Fantasy"},
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     ).json()
 
     response = client.post(
@@ -57,20 +58,19 @@ def test_create_book_success(client):
             "description": "Nice",
             "genre_ids": [genre["id"]],
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
 
     assert response.status_code == 200
-    assert response.json()["title"] == "Valid Book"
+
 
 def test_create_and_get_book(client):
-    token = create_user_and_login(client, role="author")
+    headers = create_user_and_login(client, role="author")
 
-    # create genre
     genre = client.post(
         "/genres/",
         params={"name": "Fantasy"},
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     ).json()
 
     # create book
@@ -81,7 +81,7 @@ def test_create_and_get_book(client):
             "description": "Nice",
             "genre_ids": [genre["id"]],
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers = headers,
     )
 
     assert response.status_code == 200

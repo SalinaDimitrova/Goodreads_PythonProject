@@ -1,31 +1,31 @@
-from tests_.test_books import create_user_and_login
+from .test_books import create_user_and_login
 
 
 def test_delete_default_collection_forbidden(client):
-    token = create_user_and_login(client)
+    headers = create_user_and_login(client)
 
-    # взимаме default колекциите
     collections = client.get(
         "/collections/",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     ).json()
 
     default = collections[0]
 
     response = client.delete(
         f"/collections/{default['id']}",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
 
     assert response.status_code == 400
 
+
 def test_add_and_remove_book_from_collection(client):
-    token = create_user_and_login(client, role="author")
+    headers = create_user_and_login(client, role="author")
 
     genre = client.post(
         "/genres/",
         params={"name": "Sci-Fi"},
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     ).json()
 
     book = client.post(
@@ -34,25 +34,24 @@ def test_add_and_remove_book_from_collection(client):
             "title": "Dune",
             "genre_ids": [genre["id"]],
         },
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     ).json()
 
     collections = client.get(
         "/collections/",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     ).json()
 
     col_id = collections[0]["id"]
 
     response = client.post(
         f"/collections/{col_id}/books/{book['id']}",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
     assert response.status_code == 200
 
     response = client.delete(
         f"/collections/{col_id}/books/{book['id']}",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
     assert response.status_code == 200
-

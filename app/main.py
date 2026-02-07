@@ -13,13 +13,16 @@ from .api import (
     recommendations,
 )
 
-# 📦 инициализация на базата (ЕДИН път)
-init_db()
+from fastapi import FastAPI
 
 app = FastAPI(
     title="Goodreads for X",
     version="1.0.0",
 )
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
 
 # 🔐 AUTH
 app.include_router(auth.api)

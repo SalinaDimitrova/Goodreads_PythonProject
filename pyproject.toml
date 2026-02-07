@@ -7,10 +7,13 @@ dependencies = [
     "uvicorn",
     "sqlalchemy",
     "passlib[bcrypt]",
+    "bcrypt==4.0.1",
     "python-jose",
     "pytest",
     "pytest-cov",
     "coverage",
     "pylint",
     "mypy",
+    "httpx",
+    "python-multipart",
 ]

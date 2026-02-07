@@ -1,12 +1,12 @@
-from tests_.test_books import create_user_and_login
+from .test_books import create_user_and_login
 
 
 def test_add_self_as_friend(client):
-    token = create_user_and_login(client)
+    headers = create_user_and_login(client)
 
     response = client.post(
         "/friends/1",
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
     )
 
     assert response.status_code == 400
