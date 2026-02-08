@@ -1,4 +1,3 @@
-# app/api/genres.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -11,7 +10,6 @@ api = APIRouter(
     prefix="/genres",
     tags=["Genres"]
 )
-
 
 @api.post("/", response_model=GenreOut)
 def create_genre(
@@ -38,13 +36,11 @@ def create_genre(
     db.refresh(genre)
     return genre
 
-
 @api.get("/", response_model=List[GenreOut])
 def list_genres(
     db: Session = Depends(get_db)
 ) -> List[Genre]:
     return db.query(Genre).all()
-
 
 @api.get("/{genre_id}", response_model=GenreOut)
 def get_genre(

@@ -21,18 +21,10 @@ from passlib.context import CryptContext
 
 from .database import Base
 
-# ======================
-# Password hashing
-# ======================
-
 pwd_context: CryptContext = CryptContext(
     schemes=["bcrypt"],
     deprecated="auto",
 )
-
-# ======================
-# Association tables
-# ======================
 
 book_genres: Table = Table(
     "book_genres",
@@ -47,11 +39,6 @@ collection_books: Table = Table(
     Column("collection_id", ForeignKey("collections.id"), primary_key=True),
     Column("book_id", ForeignKey("books.id"), primary_key=True),
 )
-
-# ======================
-# Models
-# ======================
-
 
 class User(Base):
     __tablename__ = "users"
@@ -128,7 +115,6 @@ class Book(Base):
         .scalar_subquery()
     )
 
-
 class Genre(Base):
     __tablename__ = "genres"
 
@@ -139,7 +125,6 @@ class Genre(Base):
         secondary=book_genres,
         back_populates="genres",
     )
-
 
 class Collection(Base):
     __tablename__ = "collections"
@@ -155,7 +140,6 @@ class Collection(Base):
         secondary=collection_books,
         back_populates="collections",
     )
-
 
 class Tag(Base):
     __tablename__ = "tags"
@@ -173,12 +157,10 @@ class Tag(Base):
         CheckConstraint("length(name) > 0"),
     )
 
-
 class FriendStatus(enum.Enum):
     pending = "pending"
     accepted = "accepted"
     rejected = "rejected"
-
 
 class FriendRequest(Base):
     __tablename__ = "friend_requests"

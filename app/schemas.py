@@ -2,7 +2,6 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-
 # ======================
 # Users & Auth
 # ======================
@@ -19,7 +18,6 @@ class UserCreate(BaseModel):
             raise ValueError("Password must be at most 72 bytes")
         return value
 
-
 class UserOut(BaseModel):
     id: int
     username: str
@@ -28,16 +26,13 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class LoginRequest(BaseModel):
     username: str
     password: str
 
-
 class TokenOut(BaseModel):
     access_token: str
     token_type: str = "bearer"
-
 
 # ======================
 # Genres & Books
@@ -50,12 +45,10 @@ class GenreOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 class BookCreate(BaseModel):
     title: str
     description: Optional[str] = None
     genre_ids: List[int] = Field(default_factory=list)
-
 
 class BookOut(BaseModel):
     id: int
@@ -68,7 +61,6 @@ class BookOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 # ======================
 # Reviews
 # ======================
@@ -76,7 +68,6 @@ class BookOut(BaseModel):
 class ReviewCreate(BaseModel):
     rating: int
     comment: Optional[str] = None
-
 
 class ReviewOut(BaseModel):
     id: int
@@ -87,14 +78,12 @@ class ReviewOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 # ======================
 # Collections
 # ======================
 
 class CollectionCreate(BaseModel):
     name: str
-
 
 class CollectionOut(BaseModel):
     id: int
@@ -105,14 +94,12 @@ class CollectionOut(BaseModel):
     class Config:
         from_attributes = True
 
-
 # ======================
 # Tags
 # ======================
 
 class TagCreate(BaseModel):
     name: str
-
 
 class TagOut(BaseModel):
     id: int
@@ -121,7 +108,6 @@ class TagOut(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 # ======================
 # Friends

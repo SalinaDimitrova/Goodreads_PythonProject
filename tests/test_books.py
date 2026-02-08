@@ -63,7 +63,6 @@ def test_create_book_success(client):
 
     assert response.status_code == 200
 
-
 def test_create_and_get_book(client):
     headers = create_user_and_login(client, role="author")
 

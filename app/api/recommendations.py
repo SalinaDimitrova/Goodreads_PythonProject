@@ -19,7 +19,6 @@ api = APIRouter(
     tags=["recommendations"],
 )
 
-
 def get_excluded_book_ids(db: Session, user: User) -> Set[int]:
     excluded: Set[int] = set()
 

@@ -16,7 +16,7 @@ from .api import (
 from fastapi import FastAPI
 
 app = FastAPI(
-    title="Goodreads for X",
+    title="Goodreads for Books",
     version="1.0.0",
 )
 
@@ -24,29 +24,29 @@ app = FastAPI(
 def on_startup():
     init_db()
 
-# 🔐 AUTH
+# AUTH
 app.include_router(auth.api)
 
-# 👤 USERS
+# USERS
 app.include_router(users.api)
 
-# 📚 BOOKS
+# BOOKS
 app.include_router(books.api)
 
-# 🏷 GENRES
+# GENRES
 app.include_router(genres.api)
 
-# 📝 REVIEWS
+# REVIEWS
 app.include_router(reviews.api)
 
-# 📂 COLLECTIONS
+# COLLECTIONS
 app.include_router(collections.api)
 
-# 🏷 TAGS
+# TAGS
 app.include_router(tags.api)
 
-# 🤝 FRIENDS
+# FRIENDS
 app.include_router(friends.api)
 
-# 🎯 RECOMMENDATIONS
+# RECOMMENDATIONS
 app.include_router(recommendations.api)

@@ -12,14 +12,12 @@ api = APIRouter(
     tags=["reviews"],
 )
 
-
 def validate_rating(rating: int) -> None:
     if rating < 1 or rating > 5:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Rating must be between 1 and 5",
         )
-
 
 @api.post(
     "/books/{book_id}",
@@ -64,7 +62,6 @@ def add_review(
     db.refresh(review)
     return review
 
-
 @api.put(
     "/{review_id}",
     response_model=ReviewOut,
@@ -95,7 +92,6 @@ def edit_review(
     review.comment = data.comment
     db.commit()
     return review
-
 
 @api.delete(
     "/{review_id}",
@@ -133,7 +129,6 @@ def delete_review(
     db.delete(review)
     db.commit()
     return {"msg": "Review deleted"}
-
 
 @api.get(
     "/books/{book_id}",

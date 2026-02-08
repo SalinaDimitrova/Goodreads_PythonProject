@@ -12,7 +12,6 @@ api = APIRouter(
     tags=["users"],
 )
 
-
 @api.post(
     "/",
     response_model=UserOut,
@@ -43,7 +42,6 @@ def create_user(
 
     db.commit()
     return db_user
-
 
 @api.get(
     "/me",

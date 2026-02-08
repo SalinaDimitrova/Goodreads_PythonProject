@@ -1,7 +1,7 @@
 from sqlalchemy.engine import Engine
 
 from .database import Base, engine
-from . import models  # noqa: F401  (важно: регистрира моделите)
+from . import models
 
 
 def init_db(db_engine: Engine = engine) -> None:

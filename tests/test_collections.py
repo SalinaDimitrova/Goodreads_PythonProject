@@ -1,6 +1,5 @@
 from .test_books import create_user_and_login
 
-
 def test_delete_default_collection_forbidden(client):
     headers = create_user_and_login(client)
 
@@ -17,7 +16,6 @@ def test_delete_default_collection_forbidden(client):
     )
 
     assert response.status_code == 400
-
 
 def test_add_and_remove_book_from_collection(client):
     headers = create_user_and_login(client, role="author")

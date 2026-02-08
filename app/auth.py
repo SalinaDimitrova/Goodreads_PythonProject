@@ -3,10 +3,9 @@ from typing import Any, Dict
 
 from jose import jwt, JWTError
 
-SECRET_KEY: str = "super-secret-key"  # ⚠️ в реален проект → env var
+SECRET_KEY: str = "super-secret-key"
 ALGORITHM: str = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-
 
 def create_access_token(data: Dict[str, Any]) -> str:
     """
@@ -28,7 +27,6 @@ def create_access_token(data: Dict[str, Any]) -> str:
         algorithm=ALGORITHM,
     )
     return encoded_jwt
-
 
 def decode_token(token: str) -> Dict[str, Any]:
     """

@@ -12,7 +12,6 @@ api = APIRouter(
     tags=["friends"],
 )
 
-
 @api.post(
     "/{user_id}",
     response_model=FriendRequestOut,

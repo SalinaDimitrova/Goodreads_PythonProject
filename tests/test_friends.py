@@ -1,6 +1,5 @@
 from .test_books import create_user_and_login
 
-
 def test_add_self_as_friend(client):
     headers = create_user_and_login(client)
 

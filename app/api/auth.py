@@ -10,7 +10,6 @@ from ..auth import create_access_token
 
 api = APIRouter(tags=["auth"])
 
-
 @api.post(
     "/login",
     response_model=Dict[str, str],

@@ -13,7 +13,6 @@ oauth2_scheme: OAuth2PasswordBearer = OAuth2PasswordBearer(
     tokenUrl="/login"
 )
 
-
 def get_db() -> Iterator[Session]:
     db: Session = SessionLocal()
     try:

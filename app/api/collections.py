@@ -12,7 +12,6 @@ api = APIRouter(
     tags=["collections"],
 )
 
-
 @api.get(
     "/",
     response_model=List[CollectionOut],

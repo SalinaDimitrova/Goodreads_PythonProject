@@ -12,7 +12,6 @@ api = APIRouter(
     tags=["tags"],
 )
 
-
 @api.post(
     "/books/{book_id}",
     response_model=TagOut,
@@ -56,7 +55,6 @@ def add_tag(
     db.refresh(tag)
     return tag
 
-
 @api.delete(
     "/{tag_id}",
     status_code=status.HTTP_200_OK,
@@ -78,7 +76,6 @@ def delete_tag(
     db.commit()
     return {"msg": "Tag deleted"}
 
-
 @api.get(
     "/{tag_name}/books",
     response_model=List[BookOut],
@@ -95,7 +92,6 @@ def books_by_tag(
     ).all()
 
     return [tag.book for tag in tags]
-
 
 @api.get(
     "/books/{book_id}",

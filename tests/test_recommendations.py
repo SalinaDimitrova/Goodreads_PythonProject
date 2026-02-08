@@ -1,6 +1,5 @@
 from .test_books import create_user_and_login
 
-
 def test_recommendations_unauthorized(client):
     response = client.get("/recommendations/")
     assert response.status_code == 401

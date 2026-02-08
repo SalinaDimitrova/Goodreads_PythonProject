@@ -1,4 +1,3 @@
-# app/api/books.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -12,24 +11,21 @@ api = APIRouter(
     tags=["Books"]
 )
 
-
 @api.post("/", response_model=BookOut)
 def create_book(
     data: BookCreate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user)
 ) -> Book:
-    # ❗ книга БЕЗ жанр – забранено
     if not data.genre_ids:
         raise HTTPException(
             status_code=400,
             detail="A book must have at least one genre"
         )
-    # само author / admin
+
     if user.role not in ["author", "admin"]:
         raise HTTPException(status_code=403, detail="Only authors can add books")
 
-    # 🔴 проверка за дубликат
     existing: Optional[Book] = db.query(Book).filter(
         Book.title == data.title,
         Book.author_id == user.id
@@ -41,7 +37,6 @@ def create_book(
             detail="You already have a book with this title"
         )
 
-    # валидиране на жанровете
     genres: List[Genre] = db.query(Genre).filter(
         Genre.id.in_(data.genre_ids)
     ).all()
