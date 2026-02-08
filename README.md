@@ -21,8 +21,10 @@ Backend API проект, вдъхновен от платформата Goodrea
 ## 📦 Инсталация
 
 1. Клониране / разархивиране на проекта
-2. Създаване на виртуална среда (по желание)
-3. Инсталиране на зависимостите:
+```bash
+git clone git@github.com:SalinaDimitrova/Goodreads_PythonProject.git
+```
+2. Инсталиране на зависимостите:
 
 ```bash
 pip install -r requirements.txt

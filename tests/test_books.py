@@ -72,7 +72,6 @@ def test_create_and_get_book(client):
         headers=headers,
     ).json()
 
-    # create book
     response = client.post(
         "/books/",
         json={
@@ -86,6 +85,5 @@ def test_create_and_get_book(client):
     assert response.status_code == 200
     book_id = response.json()["id"]
 
-    # get book
     response = client.get(f"/books/{book_id}")
     assert response.status_code == 200

@@ -11,7 +11,6 @@ def test_add_self_as_friend(client):
     assert response.status_code == 400
 
 def test_friend_flow(client):
-    # user1
     client.post("/users/", json={
         "username": "u1", "password": "pass123", "role": "user"
     })
@@ -19,7 +18,6 @@ def test_friend_flow(client):
         "username": "u1", "password": "pass123"
     }).json()["access_token"]
 
-    # user2
     client.post("/users/", json={
         "username": "u2", "password": "pass123", "role": "user"
     })

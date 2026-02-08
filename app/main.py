@@ -13,8 +13,6 @@ from .api import (
     recommendations,
 )
 
-from fastapi import FastAPI
-
 app = FastAPI(
     title="Goodreads for Books",
     version="1.0.0",

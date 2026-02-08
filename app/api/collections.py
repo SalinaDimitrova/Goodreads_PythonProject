@@ -95,7 +95,6 @@ def add_book_to_collection(
             detail="Not found",
         )
 
-    # ако е default → махаме книгата от другите default колекции
     if collection.is_default:
         defaults: List[Collection] = db.query(Collection).filter(
             Collection.user_id == user.id,

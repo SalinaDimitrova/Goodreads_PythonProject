@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
-from jose import jwt, JWTError
+from jose import jwt
 
 SECRET_KEY: str = "super-secret-key"
 ALGORITHM: str = "HS256"
